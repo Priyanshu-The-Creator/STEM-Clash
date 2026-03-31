@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEM Clash</title>
+
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#6a85f1,#a777e3);
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:20px;
+color:white;
+}
+
+/* glass container */
+
+.screen{
+width:100%;
+max-width:520px;
+background:rgba(255,255,255,0.12);
+backdrop-filter:blur(18px);
+border-radius:24px;
+padding:30px;
+box-shadow:0 20px 50px rgba(0,0,0,0.35);
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:18px;
+}
+
+.hidden{display:none}
+
+h1{font-size:34px}
+
+h2{opacity:.9}
+
+/* buttons */
+
+button{
+width:220px;
+padding:14px;
+border:none;
+border-radius:14px;
+font-size:16px;
+cursor:pointer;
+color:white;
+background:linear-gradient(135deg,#36d1dc,#5b86e5);
+transition:.25s;
+}
+
+button:hover{
+transform:scale(1.05);
+box-shadow:0 10px 25px rgba(0,0,0,0.35);
+}
+
+/* input */
+
+input{
+padding:12px;
+border-radius:10px;
+border:none;
+width:80%;
+text-align:center;
+font-size:16px;
+}
+
+/* cards */
+
+.memberGrid{
+width:100%;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+}
+
+.card{
+background:rgba(255,255,255,0.18);
+border-radius:16px;
+padding:16px;
+cursor:pointer;
+text-align:center;
+transition:.25s;
+}
+
+.card:hover{
+transform:translateY(-4px);
+background:rgba(255,255,255,0.3);
+}
+
+/* board */
+
+.board{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px;
+}
+
+.cell{
+width:90px;
+height:90px;
+border-radius:16px;
+background:rgba(255,255,255,0.25);
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:36px;
+font-weight:bold;
+cursor:pointer;
+transition:.2s;
+}
+
+.cell:hover{
+background:rgba(255,255,255,0.4);
+transform:scale(1.05);
+}
+
+/* win glow */
+
+.win{
+background:#22c55e !important;
+animation:glow 1s infinite alternate;
+}
+
+@keyframes glow{
+from{box-shadow:0 0 10px #22c55e}
+to{box-shadow:0 0 25px #22c55e}
+}
+
+/* result */
+
+.result{
+font-size:20px;
+font-weight:600;
+}
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+pointer-events:none;
+}
+
+.credit{
+font-size:12px;
+opacity:.8;
+}
+
+</style>
+</head>
+
+<body>
+
+<canvas id="confetti"></canvas>
+
+<!-- REGISTER -->
+
+<div id="register" class="screen">
+
+<h1>Welcome to STEM Clash</h1>
+
+<input id="nameInput" placeholder="Enter your name">
+
+<button onclick="register()">Start</button>
+
+</div>
+
+<!-- HOME -->
+
+<div id="home" class="screen hidden">
+
+<h1>STEM Clash</h1>
+
+<button onclick="startIRL()">Play IRL</button>
+<button onclick="openMembers()">Compete with Members</button>
+
+<p class="credit">Created by Priyanshu</p>
+
+</div>
+
+<!-- MEMBERS -->
+
+<div id="members" class="screen hidden">
+
+<h2>Select Member</h2>
+
+<div id="memberGrid" class="memberGrid"></div>
+
+<button onclick="goHome()">Home</button>
+
+</div>
+
+<!-- GAME -->
+
+<div id="game" class="screen hidden">
+
+<h2 id="title"></h2>
+
+<div id="board" class="board"></div>
+
+<div id="result" class="result"></div>
+
+<button onclick="resetBoard()">Reset Board</button>
+<button onclick="goHome()">Home</button>
+
+</div>
+
+<script>
+
+let player=""
+
+const members=[
+{name:"Priyanshu",rank:"President"},
+{name:"Shubhanshu",rank:"Vice President"},
+{name:"Vighnesh",rank:"Member"},
+{name:"Shreenivas",rank:"Member"},
+{name:"Nilesh",rank:"Member"},
+{name:"Arsalan",rank:"Member"},
+{name:"Wahid",rank:"Member"},
+{name:"Mahima",rank:"Member"},
+{name:"Pooja",rank:"Member"},
+{name:"Vaibhavi",rank:"Member"},
+{name:"Sayama",rank:"Member"}
+]
+
+let board=[]
+let turn="X"
+let vsBot=false
+let botName=""
+
+function show(id){
+
+document.querySelectorAll(".screen")
+.forEach(s=>s.classList.add("hidden"))
+
+document.getElementById(id).classList.remove("hidden")
+
+}
+
+/* registration */
+
+function register(){
+
+player=document.getElementById("nameInput").value
+
+if(player.trim()=="") player="Player"
+
+show("home")
+
+}
+
+function goHome(){
+show("home")
+}
+
+/* members */
+
+function openMembers(){
+
+show("members")
+
+let grid=document.getElementById("memberGrid")
+grid.innerHTML=""
+
+members.forEach(m=>{
+
+let c=document.createElement("div")
+c.className="card"
+
+c.innerHTML=`<h3>${m.name}</h3><p>${m.rank}</p>`
+
+c.onclick=()=>startGame(m.name)
+
+grid.appendChild(c)
+
+})
+
+}
+
+/* start modes */
+
+function startIRL(){
+
+vsBot=false
+document.getElementById("title").innerText="Player X vs Player O"
+startBoard()
+
+}
+
+function startGame(name){
+
+vsBot=true
+botName=name
+
+document.getElementById("title").innerText=player+" vs "+name
+
+startBoard()
+
+}
+
+/* board */
+
+function startBoard(){
+
+show("game")
+
+board=["","","","","","","","",""]
+
+turn="X"
+
+document.getElementById("result").innerText=""
+
+drawBoard()
+
+}
+
+function drawBoard(){
+
+let b=document.getElementById("board")
+b.innerHTML=""
+
+board.forEach((v,i)=>{
+
+let cell=document.createElement("div")
+
+cell.className="cell"
+cell.innerText=v
+
+cell.onclick=()=>move(i)
+
+b.appendChild(cell)
+
+})
+
+}
+
+/* player move */
+
+function move(i){
+
+if(board[i]!="")return
+
+board[i]=turn
+
+drawBoard()
+
+let win=checkWin(turn)
+
+if(win){
+
+highlight(win)
+
+document.getElementById("result").innerText=turn+" Wins 👑"
+
+confetti()
+
+return
+}
+
+if(board.every(c=>c!="")){
+document.getElementById("result").innerText="Draw"
+return
+}
+
+turn=turn=="X"?"O":"X"
+
+if(vsBot && turn=="O")setTimeout(botMove,400)
+
+}
+
+/* SMART AI */
+
+function botMove(){
+
+let bestScore=-Infinity
+let move
+
+for(let i=0;i<9;i++){
+
+if(board[i]==""){
+
+board[i]="O"
+
+let score=minimax(board,0,false)
+
+board[i]=""
+
+if(score>bestScore){
+bestScore=score
+move=i
+}
+
+}
+
+}
+
+board[move]="O"
+
+drawBoard()
+
+let win=checkWin("O")
+
+if(win){
+
+highlight(win)
+
+document.getElementById("result").innerText=botName+" Wins 👑"
+
+confetti()
+
+return
+}
+
+if(board.every(c=>c!="")){
+document.getElementById("result").innerText="Draw"
+return
+}
+
+turn="X"
+
+}
+
+function minimax(board,depth,isMax){
+
+let winX=checkWin("X")
+let winO=checkWin("O")
+
+if(winO)return 10-depth
+if(winX)return depth-10
+if(board.every(c=>c!=""))return 0
+
+if(isMax){
+
+let best=-Infinity
+
+for(let i=0;i<9;i++){
+
+if(board[i]==""){
+
+board[i]="O"
+best=Math.max(best,minimax(board,depth+1,false))
+board[i]=""
+
+}
+
+}
+
+return best
+
+}else{
+
+let best=Infinity
+
+for(let i=0;i<9;i++){
+
+if(board[i]==""){
+
+board[i]="X"
+best=Math.min(best,minimax(board,depth+1,true))
+board[i]=""
+
+}
+
+}
+
+return best
+
+}
+
+}
+
+/* win check */
+
+function checkWin(p){
+
+let w=[
+[0,1,2],[3,4,5],[6,7,8],
+[0,3,6],[1,4,7],[2,5,8],
+[0,4,8],[2,4,6]
+]
+
+for(let c of w){
+if(c.every(i=>board[i]==p))return c
+}
+
+return null
+
+}
+
+function highlight(cells){
+
+let b=document.getElementById("board").children
+
+cells.forEach(i=>b[i].classList.add("win"))
+
+}
+
+function resetBoard(){
+startBoard()
+}
+
+/* confetti */
+
+function confetti(){
+
+let canvas=document.getElementById("confetti")
+let ctx=canvas.getContext("2d")
+
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
+
+let pieces=[]
+
+for(let i=0;i<100;i++){
+pieces.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height-200,
+r:Math.random()*6+4,
+d:Math.random()*360
+})
+}
+
+let angle=0
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+for(let p of pieces){
+
+ctx.beginPath()
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2)
+ctx.fillStyle="hsl("+p.d+",80%,60%)"
+ctx.fill()
+
+p.y+=Math.cos(angle+p.d)+2
+p.x+=Math.sin(angle)
+
+if(p.y>canvas.height)p.y=-10
+
+}
+
+angle+=0.01
+
+requestAnimationFrame(draw)
+
+}
+
+draw()
+
+setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),2000)
+
+}
+
+</script>
+
+</body>
+</html>
