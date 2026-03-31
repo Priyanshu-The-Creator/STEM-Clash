@@ -66,7 +66,7 @@ Available members in the game:
 
 Play the game online:
 
-https://Priyanshu-The-Creator.github.io/stem-clash
+https://priyanshu-the-creator.github.io/STEM-Clash/
 
 ---
 
