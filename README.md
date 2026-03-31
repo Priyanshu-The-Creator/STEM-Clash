@@ -1,4 +1,4 @@
-#🎮 STEM Clash
+🎮 STEM Clash
 
 STEM Clash is a web-based Tic Tac Toe game created as a project for the School STEM Club. The game features a modern aesthetic interface and an AI-powered opponent, allowing players to compete against club members represented as bots. The project demonstrates the use of HTML, CSS, and JavaScript to build an interactive web game.
 
